@@ -1,0 +1,56 @@
+{
+  "export": "2026-08-09",
+  "seed": 42,
+  "versions": {
+    "sklearn": "1.9.0",
+    "numpy": "2.5.1",
+    "pandas": "3.0.5"
+  },
+  "slice": {
+    "rows": 16726,
+    "clients": 28,
+    "base_rate": 0.596,
+    "flagged": 5885
+  },
+  "precision_at_k_full": {
+    "k10": 0.7,
+    "k20": 0.7,
+    "k50": 0.68
+  },
+  "rule_holdout": {
+    "n": 4219,
+    "base": 0.6172078691633088,
+    "k20": 0.9
+  },
+  "model_research": {
+    "k10": 0.7,
+    "k20": 0.8,
+    "AUC": 0.626
+  },
+  "audit_time": {
+    "AUC": 0.502,
+    "base": 0.596
+  },
+  "mix": {
+    "tier": {
+      "none": 10841,
+      "P2": 2525,
+      "P3": 1711,
+      "P1": 1649
+    },
+    "archetype": {
+      "no_signal": 10841,
+      "aging_visible": 2525,
+      "young_or_small_signal": 1711,
+      "demand_held_ctr_starved": 1649
+    }
+  },
+  "baseline": {
+    "flagged_share": 0.3518474231735023,
+    "p1_rows": 1649,
+    "p2_rows": 2525,
+    "p3_rows": 1711,
+    "base_n": 16726
+  },
+  "action_queue_sha256": "1126bca86156f959d74378ca2b6e0bdf6d8b65e1afa2bb93d00f37f38c7cf27d"
+}
