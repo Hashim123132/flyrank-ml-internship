@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which pages will be down next? Ranking 16,726 pages for the human review queue</title>
+<meta name="description" content="Research paper: ranking content pages by decline risk using observed signals only - CTR-gap baseline vs logistic regression, client-grouped validation, time-arm audit, and a human-checked action playbook. Built on the FlyRank ML Internship dataset.">
+<style>
+  :root { --ink:#1a1a1a; --muted:#5a5a5a; --line:#e3e3e3; --accent:#1f4e79; --bg:#ffffff; }
+  * { box-sizing: border-box; }
+  body { margin:0; color:var(--ink); background:var(--bg); font:16px/1.6 Arial, Helvetica, sans-serif; }
+  .wrap { max-width:880px; margin:0 auto; padding:24px 20px 80px; }
+  header { border-bottom:3px solid var(--ink); padding-bottom:18px; margin-bottom:8px; }
+  h1 { font-size:1.9em; line-height:1.25; margin:0 0 10px; font-weight:700; }
+  .byline { color:var(--muted); font-size:.95em; }
+  .byline a { color:var(--accent); }
+  h2 { font-size:1.25em; margin:2.2em 0 .6em; padding-bottom:.25em; border-bottom:1px solid var(--line); }
+  h3 { font-size:1.05em; margin:1.5em 0 .4em; }
+  p { margin:.6em 0; }
+  ul, ol { margin:.5em 0 .8em; padding-left:1.4em; }
+  li { margin:.25em 0; }
+  .abstract { background:#f6f6f6; border-left:4px solid var(--ink); padding:14px 16px; margin:18px 0; }
+  figure { margin:1.2em 0; }
+  figure img { width:100%; max-width:620px; height:auto; display:block; background:#fff; }
+  figcaption { color:var(--muted); font-size:.9em; margin-top:.4em; max-width:620px; }
+  table { border-collapse:collapse; width:100%; max-width:620px; margin:1em 0; font-size:.95em; }
+  caption { text-align:left; color:var(--muted); font-size:.9em; caption-side:bottom; padding-top:.5em; }
+  th, td { border:1px solid var(--line); padding:7px 10px; text-align:left; }
+  th { background:#f6f6f6; }
+  td.num { font-variant-numeric:tabular-nums; }
+  .toc { background:#fafafa; border:1px solid var(--line); padding:10px 16px; margin:16px 0; }
+  .toc ol { margin:0; }
+  code { font-family:ui-monospace, Menlo, Consolas, monospace; font-size:.9em; background:#f4f4f4; padding:1px 4px; border-radius:3px; }
+  .nogo { background:#fdf6f6; border-left:4px solid #a33; padding:10px 14px; }
+  footer { margin-top:3em; padding-top:1em; border-top:1px solid var(--line); color:var(--muted); font-size:.9em; }
+  a { color:var(--accent); }
+  @media (max-width:600px){ body { font-size:15px; } h1 { font-size:1.5em; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<a id="top"></a>
+<header>
+  <h1>Which pages will be down next? Ranking 16,726 pages for the human review queue</h1>
+  <p class="byline">
+    <strong>Hashim</strong> &middot; FlyRank ML Internship 2026 &middot; content-refresh lane &middot; August 2026<br>
+    Repo: <a href="https://github.com/Hashim123132/flyrank-ml-internship">github.com/Hashim123132/flyrank-ml-internship</a>
+  </p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#abstract">Abstract</a></li>
+    <li><a href="#problem">Introduction - the editor's hour</a></li>
+    <li><a href="#data">Data - what we used, and what we left out</a></li>
+    <li><a href="#method">Methodology - label, baseline, model, validation</a></li>
+    <li><a href="#results">Results - model vs baseline, same split</a></li>
+    <li><a href="#limits">Limitations &amp; honest framing</a></li>
+    <li><a href="#recommendations">Ranked recommendations - the action playbook</a></li>
+    <li><a href="#repro">Reproducibility</a></li>
+    <li><a href="#credit">Acknowledgments &amp; data credit</a></li>
+  </ol>
+</nav>
+
+<h2 id="abstract">Abstract</h2>
+<div class="abstract">
+<p><strong>Question:</strong> can a content team, using only signals observed before the evaluation window, be pointed at the pages most likely to go down - before they go down?</p>
+<p><strong>Data:</strong> we rank 16,726 live pages from the FlyRank ML Internship dataset (28 anonymized clients, one export), using observed signals only - no future windows, no label-derived fields, no IDs as features.</p>
+<p><strong>Method:</strong> a transparent CTR-gap rule as baseline, plus a logistic regression on observed signals; both scored on a client-grouped holdout and re-audited on a second, later holdout with strictly pre-label-window features.</p>
+<p><strong>Result:</strong> the model lifts top-20 precision from 0.85 to 0.95 (AUC 0.572 → 0.638) on the same split with a 0.63 base rate, and the rule alone re-measures 0.90 precision@20 on a fresh window; the time-arm audit sits at chance (AUC 0.50).</p>
+<p><strong>What it's for:</strong> a ranked, tiered review queue (P1/P2/P3) that tells an editor which pages to open first - decision support that keeps a human in the loop, never automation of the edit itself.</p>
+</div>
+
+<h2 id="problem">Introduction - the editor's hour</h2>
+<p>A content editor has one hour and a list of 16,000+ pages. <strong>Which pages should they open first?</strong> Without a score, "first" means whatever sorts to the top of a spreadsheet - and in our weak-pick study that is exactly how the habit rule lost: six of its top-20 picks were not currently down.</p>
+<p>The cost of a wrong call is asymmetric. <strong>A missed declining page keeps losing CTR for weeks</strong>; a false pick burns one reviewer hour - cheap, but it adds up when the queue is long. This project builds a ranked queue so the hour lands on the pages where decline is most likely and most expensive.</p>
+<p>The question is deliberately narrow: <strong>same-window triage, not prediction months ahead</strong>. We will show that the honest lead-time claim fails its own audit - and that the same-window claim survives it.</p>
+
+<h2 id="data">Data - what we used, and what we left out</h2>
+<p>Source: <code>content_refresh_anonymized.csv</code> - the anonymized starter export of FlyRank's content-performance warehouse (a pseudonymous, one-row-per-page snapshot, no client names or raw queries anywhere). Raw export: <strong>30,000 rows, 32 clients</strong>. Analysis slice after exclusions: <strong>16,726 rows, 28 clients</strong>.</p>
+<p><strong>Excluded, with reasons:</strong></p>
+<ul>
+  <li>Rows with <code>impressions_90d &lt; 500</code> or no real position (<code>avg_position = 0</code>) - below the volume floor the CTR signal is mostly noise.</li>
+  <li><code>trend_direction</code> / <code>trend_pct</code> as inputs - they are the label source; evaluation only.</li>
+  <li>IDs (<code>content_id</code>, <code>client_id</code>) as features - grouping only, never predictors.</li>
+  <li>The 30-day and previous-30-day windows as features - a future-leakage experiment (Week 6) showed they add no lead time.</li>
+  <li>No product flags exist in the export (no health score, priority score, or action type columns to mis-use).</li>
+</ul>
+<p>Public-safety: everything here is pseudonymous category labels and anonymized IDs; no client-identifying detail appears anywhere in this paper or the repo.</p>
+
+<h2 id="method">Methodology - label, baseline, model, validation</h2>
+<h3>Label (one sentence)</h3>
+<p>A page is <strong>down</strong> when its standing evaluation <code>trend_direction</code> is "down" - measured on the same data as everything else, used only for evaluation, never as an input.</p>
+<h3>Baseline - the transparent rule (Week 4)</h3>
+<p>A rule an editor can verify by hand: <code>score = (position &le; 20) × gap-to-tier-median-CTR × log(1 + impressions)</code>. It flags 5,885 pages of 16,726 (35%). It is the fair comparison because it is measured on the same data, same split, same metrics as the model.</p>
+<h3>Model - logistic regression on observed signals (Week 5)</h3>
+<p>Twenty features, all observable at ranking time: log-transformed volumes (impressions, clicks, sessions, days with impressions, word count, search volume), raw observed fields (CTR, position, content age, days since last update, engagement rate, scroll rate, AI-traffic share), two missing-data flags, and five position-tier dummies. Missing keyword/word-count is flagged, not imputed as a real value.</p>
+<h3>Validation design</h3>
+<ul>
+  <li><strong>Client-grouped split:</strong> 22 train clients / 6 holdout clients, so pages from the same client never straddle the split. Test slice: 3,787 pages, base rate 0.633.</li>
+  <li><strong>Second holdout (Week 7):</strong> the rule is rebuilt from train-tier medians and re-measured on a later window (4,219 pages, base 0.617) - a freshness check that the queue is not a first-run fluke.</li>
+  <li><strong>Leakage checks (all verified in the notebooks):</strong> rule inputs disjoint from label sources; features disjoint from the label and from IDs; a <strong>time-arm audit</strong> trains only on strictly pre-label-window features and scores on the label - the honest lead-time measurement.</li>
+</ul>
+
+<h2 id="results">Results - model vs baseline, same split</h2>
+<p>All precision@K numbers carry their base rate next to them - with 0.63 of the test slice down, P@K alone flatters; AUC is the discrimination number.</p>
+
+<table>
+  <caption>Table 1 - Held-out test, same client-grouped split (n = 3,787, base rate 0.633). P@K = share of the top-K picks that are down.</caption>
+  <thead><tr><th>Model</th><th>P@10</th><th>P@20</th><th>P@50</th><th>AUC</th></tr></thead>
+  <tbody>
+    <tr><td>Baseline CTR-gap rule</td><td class="num">0.80</td><td class="num">0.85</td><td class="num">0.88</td><td class="num">0.572</td></tr>
+    <tr><td><strong>Logistic regression</strong></td><td class="num"><strong>0.90</strong></td><td class="num"><strong>0.95</strong></td><td class="num">0.88</td><td class="num"><strong>0.638</strong></td></tr>
+    <tr><td>Random forest</td><td class="num">0.80</td><td class="num">0.80</td><td class="num">0.84</td><td class="num">0.589</td></tr>
+  </tbody>
+</table>
+
+<table>
+  <caption>Table 2 - Second holdout, later window (n = 4,219, base rate 0.617). The rule alone re-measures well; the model's edge narrows on a fresh window.</caption>
+  <thead><tr><th>Model</th><th>P@10</th><th>P@20</th><th>P@50</th><th>AUC</th></tr></thead>
+  <tbody>
+    <tr><td>Rule, rebuilt</td><td class="num">0.80</td><td class="num">0.90</td><td class="num">0.86</td><td class="num">n/a</td></tr>
+    <tr><td>Logistic regression</td><td class="num">0.70</td><td class="num">0.80</td><td class="num">0.76</td><td class="num">0.626</td></tr>
+  </tbody>
+</table>
+
+<figure>
+  <img src="img/capstone_precision_at_k.png" alt="Line chart: precision at K for logistic regression versus the baseline rule on the shared holdout, with the 0.63 base rate drawn as a dotted line.">
+  <figcaption>On the same client-grouped holdout the model lifts P@20 from 0.85 to 0.95 against a 0.63 random floor; the gap narrows as K grows - the top of the queue is where the model earns its keep.</figcaption>
+</figure>
+
+<figure>
+  <img src="img/capstone_action_mix.png" alt="Horizontal bar chart: the 16,726-page queue, split into 1,649 review-first, 2,525 refresh-plan, and 1,711 monitor-only pages.">
+  <figcaption>The playbook puts 5,885 pages (35% of the slice) in front of a human, sorted by measured risk; the rest are watched, not acted on.</figcaption>
+</figure>
+
+<p><strong>What the errors look like</strong> - the honest part:</p>
+<ul>
+  <li>6 of the model's top-50 picks were not currently down (leading-indicator flags, not mistakes to act on blindly).</li>
+  <li>On the deep tier (rank 51+), the model has no skill at all: AUC 0.392 at n = 51 - the playbook never tiers those pages.</li>
+  <li>The <strong>time-arm audit - strictly pre-label-window features only - measures AUC 0.502</strong> (base 0.596): at chance. Same-window ranking works; the lead-time claim does not.</li>
+</ul>
+
+<h2 id="limits">Limitations &amp; honest framing</h2>
+<ul>
+  <li><strong>No lead-time claim survives the time-arm audit.</strong> Re-scored on strictly pre-label-window features, both approaches land at chance (AUC 0.50). The measured value is same-window triage, not prediction "before it happens".</li>
+  <li><strong>Deep-tier pages are unrankable here</strong> (AUC 0.392, n = 51) - excluded from tiers by design; the signal there is noise-adjacent.</li>
+  <li><strong>Base rate keeps P@K honest but not flattering:</strong> 0.63 of the test slice is down, so P@20 = 0.95 is +0.32 over random. The lift is real but modest; AUC is the number to quote.</li>
+  <li><strong>Leading-indicator guesses leak into the queue:</strong> 6 of the top-50 were not currently down - fine as a flag, unsafe as an action; the checklist requires a SERP check first.</li>
+  <li><strong>One export, one point in time:</strong> seasonality and refresh cycles are under-explored; these numbers are observed on this cohort, directional for others.</li>
+  <li><strong>No causal claims at all:</strong> we rank what is correlated with decline; we never ran an experiment.</li>
+</ul>
+
+<h2 id="recommendations">Ranked recommendations - the action playbook</h2>
+<p>The queue (Week 7) sorts all 16,726 pages and assigns every pick a tier, an archetype, a reason code, and a human action:</p>
+
+<table>
+  <caption>Table 3 - The queue's tiers and what a reviewer does with each. Full queue: <code>work/outputs/action_queue.csv</code>, regenerated by the notebook.</caption>
+  <thead><tr><th>Tier</th><th>Pages</th><th>Action</th><th>When</th></tr></thead>
+  <tbody>
+    <tr><td><strong>P1 - review first</strong></td><td class="num">1,649</td><td><code>review_first</code></td><td>High-volume pages whose CTR gap vs their own tier is wide and whose decay risk is top-ranked. Open page + SERP, then update.</td></tr>
+    <tr><td><strong>P2 - refresh plan</strong></td><td class="num">2,525</td><td><code>refresh_plan</code></td><td>Visible, aging pages with a measured gap. Plan a refresh in the next cycle.</td></tr>
+    <tr><td><strong>P3 - monitor only</strong></td><td class="num">1,711</td><td><code>monitor_only</code></td><td>Below the action floor. Watch one more window; never burn a reviewer hour here.</td></tr>
+    <tr><td>not tiered</td><td class="num">10,841</td><td><code>no_action</code></td><td>No signal above the floor.</td></tr>
+  </tbody>
+</table>
+
+<p><strong>The human checklist before acting on any pick</strong> - 1) page text matches the query it ranks for; 2) the SERP intent fits the page (sub-intent mismatch explains many gaps); 3) tracker consistency between last and previous windows (a tracker break mimics a huge gap); 4) recent edit/warm-up history (young pages ramp, not decay); 5) only then decide: adjust text, plan a refresh, or watch one more window.</p>
+
+<div class="nogo">
+<p><strong>The no-go list (never automate):</strong></p>
+<ul>
+  <li>Never auto-edit titles, metas, or body text - editing without the SERP check produces harm.</li>
+  <li>Never auto-delete or deindex pages; the queue is review-only.</li>
+  <li>Never act on a single deep-tier page (rank 51+).</li>
+  <li>Never treat the P@K numbers as a promise of future hits - the audit shows at-chance on future-safe inputs.</li>
+  <li>Never feed the queue trend columns, IDs, product flags, or the label.</li>
+  <li>Never reuse this queue on a later export without re-running the notebook.</li>
+</ul>
+</div>
+
+<h2 id="repro">Reproducibility</h2>
+<p><strong>Run it yourself.</strong> <code>pip install -r requirements.txt</code>, then execute the notebooks in order - each seeds and saves its own outputs; a fresh clone reproduces every number below.</p>
+<ul>
+  <li><a href="https://github.com/Hashim123132/flyrank-ml-internship/blob/main/work/notebooks/w01_research_question.ipynb">w01 - research question</a></li>
+  <li><a href="https://github.com/Hashim123132/flyrank-ml-internship/blob/main/work/notebooks/w02_ml_task_framing.ipynb">w02 - task framing</a></li>
+  <li><a href="https://github.com/Hashim123132/flyrank-ml-internship/blob/main/work/notebooks/w03_data_contract.ipynb">w03 - data contract &amp; leakage check</a></li>
+  <li><a href="https://github.com/Hashim123132/flyrank-ml-internship/blob/main/work/notebooks/w04_baseline_score.ipynb">w04 - baseline score</a></li>
+  <li><a href="https://github.com/Hashim123132/flyrank-ml-internship/blob/main/work/notebooks/w05_model.ipynb">w05 - model</a></li>
+  <li><a href="https://github.com/Hashim123132/flyrank-ml-internship/blob/main/work/notebooks/w06_validation_audit.ipynb">w06 - validation audit</a></li>
+  <li><a href="https://github.com/Hashim123132/flyrank-ml-internship/blob/main/work/notebooks/w07_action_playbook.ipynb">w07 - action playbook</a></li>
+  <li><a href="https://github.com/Hashim123132/flyrank-ml-internship/blob/main/work/notebooks/capstone.ipynb">capstone - this paper's mirror</a></li>
+</ul>
+<p><strong>Receipts and environment:</strong> seed 42 everywhere (split, models, permutation); sklearn 1.9.0, numpy 2.5.1, pandas 3.0.5. Every claim above traces to <code>work/outputs/playbook_metrics.json</code> (committed) or to the listed notebooks' committed outputs; the queue CSV is deliberately regenerated per run (CI blocks committing CSVs).</p>
+
+<h2 id="credit">Acknowledgments &amp; data credit</h2>
+<p>Built on the <strong>FlyRank ML Internship dataset</strong> - an anonymized export of real production content-performance signals, provided for the internship program: <a href="https://flyrank.ai">https://flyrank.ai</a>. The data is real; the cohort design and all code are in the <a href="https://github.com/Hashim123132/flyrank-ml-internship">repository</a>.</p>
+
+<footer>
+  <p>All claims on this page are observed, measured, and decision-support - no causal language, no future-window promises. <a href="#top">Back to top</a></p>
+</footer>
+
+</div>
+</body>
+</html>
