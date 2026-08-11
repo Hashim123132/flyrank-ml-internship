@@ -66,7 +66,7 @@
 
 <h2 id="abstract">Abstract</h2>
 <div class="abstract">
-<p><strong>Question:</strong> can a content team, using only signals observed before the evaluation window, be pointed at the pages most likely to go down - before they go down?</p>
+<p><strong>Question:</strong> FlyRank's content-review problem is triage at scale - which of thousands of published pages to open first - so the question here is whether a team, using only signals observed before the evaluation window, can be pointed at the pages most likely to go down before they go down.</p>
 <p><strong>Data:</strong> we rank 16,726 live pages from the FlyRank ML Internship dataset (28 anonymized clients, one export), using observed signals only - no future windows, no label-derived fields, no IDs as features.</p>
 <p><strong>Method:</strong> a transparent CTR-gap rule as baseline, plus a logistic regression on observed signals; both scored on a client-grouped holdout and re-audited on a second, later holdout with strictly pre-label-window features.</p>
 <p><strong>Result:</strong> the model lifts top-20 precision from 0.85 to 0.95 (AUC 0.572 → 0.638) on the same split with a 0.63 base rate, and the rule alone re-measures 0.90 precision@20 on a fresh window; the time-arm audit sits at chance (AUC 0.50).</p>
@@ -74,7 +74,7 @@
 </div>
 
 <h2 id="problem">Introduction - the editor's hour</h2>
-<p>A content editor has one hour and a list of 16,000+ pages. <strong>Which pages should they open first?</strong> Without a score, "first" means whatever sorts to the top of a spreadsheet - and in our weak-pick study that is exactly how the habit rule lost: six of its top-20 picks were not currently down.</p>
+<p>This is the FlyRank content-refresh problem: customers publish pages continuously, performance drifts, and a weekly review decides which pages are refreshed first. In this case study - one anonymized export of FlyRank's content-performance warehouse - an editor has one hour and a list of 16,726 pages. <strong>Which pages should they open first?</strong> Without a score, "first" means whatever sorts to the top of a spreadsheet - and in our weak-pick study that is exactly how the habit rule lost: six of its top-20 picks were not currently down.</p>
 <p>The cost of a wrong call is asymmetric. <strong>A missed declining page keeps losing CTR for weeks</strong>; a false pick burns one reviewer hour - cheap, but it adds up when the queue is long. This project builds a ranked queue so the hour lands on the pages where decline is most likely and most expensive.</p>
 <p>The question is deliberately narrow: <strong>same-window triage, not prediction months ahead</strong>. We will show that the honest lead-time claim fails its own audit - and that the same-window claim survives it.</p>
 
