@@ -44,7 +44,7 @@
 <header>
   <h1>Which pages will be down next? Ranking 57,117 pages for the human review queue</h1>
   <p class="byline">
-    <strong>Hashim</strong> &middot; FlyRank ML Internship 2026 &middot; content-refresh lane &middot; August 2026<br>
+    <strong>Hashim</strong> &middot; FlyRank ML Internship 2026 &middot; Ranking Signal Analysis &middot; August 2026<br>
     Repo: <a href="https://github.com/Hashim123132/flyrank-ml-internship">github.com/Hashim123132/flyrank-ml-internship</a>
   </p>
 </header>
@@ -69,7 +69,7 @@
 <p><strong>Question:</strong> FlyRank's content-review problem is triage at scale - which of thousands of published pages to open first - so the question here is whether a team, using only signals observed before the evaluation window, can be pointed at the pages most likely to go down before they go down.</p>
 <p><strong>Data:</strong> we rank 57,117 live pages from the FlyRank ML Internship warehouse (41 anonymized clients, 79M rows, queried via DuckDB over Hugging Face), using observed signals only - no future windows, no label-derived fields, no IDs as features.</p>
 <p><strong>Method:</strong> a transparent CTR-gap rule as baseline, plus a random forest and logistic regression on observed signals; both scored on a client-grouped holdout and re-audited on a later, time-aware holdout with strictly pre-label-window features.</p>
-<p><strong>Result:</strong> the random forest reaches P@20 0.70 (AUC 0.574) on the same split with a 0.57 base rate; the time-arm audit sits at chance (AUC 0.522). Same-window triage works; the lead-time claim does not.</p>
+<p><strong>Result:</strong> the random forest reaches P@20 0.80 (AUC 0.570) on the same split with a 0.57 base rate; the time-arm audit sits at chance (AUC 0.522). Same-window triage works; the lead-time claim does not.</p>
 <p><strong>What it's for:</strong> a ranked, tiered review queue (P1/P2/P3) that tells an editor which pages to open first - decision support that keeps a human in the loop, never automation of the edit itself.</p>
 </div>
 
